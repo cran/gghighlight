@@ -2,33 +2,21 @@
 % Please edit documentation in R/gghighlight.R
 \name{gghighlight}
 \alias{gghighlight}
-\alias{gghighlight_line}
-\alias{gghighlight_point}
 \title{Highlight Data With Predicate}
 \usage{
-gghighlight_line(data, mapping, predicate, max_highlight = 5L,
-  unhighlighted_colour = ggplot2::alpha("grey", 0.7), use_group_by = TRUE,
-  use_direct_label = TRUE, label_key = NULL, ...,
-  environment = parent.frame())
-
-gghighlight_point(data, mapping, predicate, max_highlight = 5L,
-  unhighlighted_colour = ggplot2::alpha("grey", 0.7), use_group_by = FALSE,
-  use_direct_label = TRUE, label_key = NULL, ...,
-  environment = parent.frame())
+gghighlight(..., n = NULL, max_highlight = 5L,
+  unhighlighted_colour = ggplot2::alpha("grey", 0.7), use_group_by = NULL,
+  use_direct_label = NULL, label_key = NULL, label_params = list(fill =
+  "white"))
 }
 \arguments{
-\item{data}{Default dataset to use for plot. If not already a data.frame,
-will be converted to one by \code{\link[=fortify]{fortify()}}. If not specified,
-must be supplied in each layer added to the plot.}
+\item{...}{Expressions to filter data, which is passed to \code{\link[dplyr:filter]{dplyr::filter()}}.}
 
-\item{mapping}{Default list of aesthetic mappings to use for plot.
-If not specified, must be supplied in each layer added to the plot.}
-
-\item{predicate}{Expression to filter data, which is passed to \code{\link[dplyr:filter]{dplyr::filter()}}.}
+\item{n}{Number of layers to clone.}
 
 \item{max_highlight}{Max number of series to highlight.}
 
-\item{unhighlighted_colour}{Colour for unhighlited lines/points.}
+\item{unhighlighted_colour}{Colour for unhighlighted geoms.}
 
 \item{use_group_by}{If \code{TRUE}, use \code{\link[dplyr:group_by]{dplyr::group_by()}} to evaluate \code{predicate}.}
 
@@ -36,30 +24,10 @@ If not specified, must be supplied in each layer added to the plot.}
 
 \item{label_key}{Column name for \code{label} aesthetics.}
 
-\item{...}{Arguments passed to the corresponding geometry functions (e.g. \code{geom_line()}).}
-
-\item{environment}{If a variable defined in the aesthetic mapping is not
-found in the data, ggplot will look for it in this environment. It defaults
-to using the environment in which \code{ggplot()} is called.}
+\item{label_params}{A list of parameters, which is passed to \code{\link[ggrepel:geom_label_repel]{ggrepel::geom_label_repel()}}.}
 }
 \description{
-\code{gghiglight_line()} highlights lines (\code{\link[ggplot2:geom_line]{ggplot2::geom_line()}}) and \code{gghighlight_points()} highlights
-points (\code{\link[ggplot2:geom_point]{ggplot2::geom_point()}}) according to the given predicates.
-}
-\details{
-\code{gghiglight_lines()} evaluates \code{predicate} by grouped calculation; You must specify the expression that returns one value
-per group. Aggregate functions (e.g. \code{max()}, \code{all()}) are usually needed.
-
-\code{gghighlight_points()} evaluates \code{predicate} by ungrouped calculation; You must specify the expression that returns one value
-per row.
-
-\code{gghighlight_*()} behaves differently, depending on what type of vector the result of the \code{predicate} is.
-\itemize{
-\item If \code{predicate} is evaluated into a logical vector, the data series/points filtered by the logical vector will
-be highlighted.
-\item Otherwise, the data series/points are sorted by the result of \code{predicate} and the top \code{max_highlight} ones will
-be highlighted.
-}
+\code{gghiglight()} highlights (almost) any geoms according to the given predicates.
 }
 \examples{
 d <- data.frame(
@@ -69,13 +37,13 @@ d <- data.frame(
   stringsAsFactors = FALSE
 )
 
-gghighlight_line(d, aes(idx, value, colour = category), max(value) > 10)
+# highlight the lines whose max values are larger than 10
+ggplot(d, aes(idx, value, colour = category)) +
+  geom_line() + gghighlight(max(value) > 10)
 
-\dontrun{
-# This throws an error because the predicate returns multiple values per group.
-gghighlight_line(d, aes(idx, value, colour = category), value > 10)
-}
-
-gghighlight_point(d, aes(idx, value), value > 10, label_key = category)
+# highlight the points whose values are larger than 10
+ggplot(d, aes(idx, value)) +
+  geom_point() +
+  gghighlight(value > 10, label_key = category)
 
 }
