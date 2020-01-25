@@ -1,4 +1,5 @@
-context("gghighligt_line")
+setup(options(lifecycle_verbosity = "quiet"))
+teardown(options(lifecycle_verbosity = NULL))
 
 d <- data.frame(
   idx   = c( 1, 1, 1, 2, 2, 2, 3, 3, 3),
@@ -8,8 +9,8 @@ d <- data.frame(
 )
 
 
-test_that("gghighligt_line() with usual arguments works", {
-  expect_silent(p <- gghighlight_line(d, aes(idx, value, colour = category), max(value) > 10))
+test_that("gghighlight_line() with usual arguments works", {
+  p <- gghighlight_line(d, aes(idx, value, colour = category), max(value) > 10)
   d_built <- ggplot2::ggplot_build(p)
 
   expect_equal(length(d_built$data), 3L)
@@ -32,11 +33,10 @@ test_that("gghighligt_line() with usual arguments works", {
 })
 
 test_that("gghighligt_line() without direct labeling works", {
-  expect_silent(p <- gghighlight_line(d, aes(idx, value, colour = category), max(value) > 10,
-                                      use_direct_label = FALSE))
+  p <- gghighlight_line(d, aes(idx, value, colour = category), max(value) > 10)
   d_built <- ggplot2::ggplot_build(p)
 
-  expect_equal(length(d_built$data), 2L)
+  expect_equal(length(d_built$data), 3L)
 
   data_unhighlighted <- d_built$data[[1]]
   data_highlighted_line <- d_built$data[[2]]
@@ -73,7 +73,7 @@ test_that("gghighligt_line() without colour mapping works", {
 library(ggplot2)
 
 test_that("gghighligt_line() works with facets", {
-  expect_silent(p <- gghighlight_line(d, aes(idx, value, colour = category), max(value) > 10) + facet_wrap(~category))
+  p <- gghighlight_line(d, aes(idx, value, colour = category), max(value) > 10) + facet_wrap(~category)
   d_built <- ggplot2::ggplot_build(p)
 
   expect_equal(length(d_built$data), 3L)
@@ -104,7 +104,7 @@ test_that("gghighligt_line() raises error if use_group_by = TRUE but predicate r
 })
 
 test_that("gghighligt_line() works with numerical predicate", {
-  expect_silent(p <- gghighlight_line(d, aes(idx, value, colour = category), max(value), max_highlight = 2L))
+  p <- gghighlight_line(d, aes(idx, value, colour = category), max(value), max_highlight = 2L)
   d_built <- ggplot2::ggplot_build(p)
 
   expect_equal(length(d_built$data), 3L)

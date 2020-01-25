@@ -4,10 +4,19 @@
 \alias{gghighlight}
 \title{Highlight Data With Predicate}
 \usage{
-gghighlight(..., n = NULL, max_highlight = 5L,
-  unhighlighted_colour = ggplot2::alpha("grey", 0.7), use_group_by = NULL,
-  use_direct_label = NULL, label_key = NULL, label_params = list(fill =
-  "white"))
+gghighlight(
+  ...,
+  n = NULL,
+  max_highlight = 5L,
+  unhighlighted_params = list(),
+  use_group_by = NULL,
+  use_direct_label = NULL,
+  label_key = NULL,
+  label_params = list(fill = "white"),
+  keep_scales = FALSE,
+  calculate_per_facet = FALSE,
+  unhighlighted_colour = NULL
+)
 }
 \arguments{
 \item{...}{Expressions to filter data, which is passed to \code{\link[dplyr:filter]{dplyr::filter()}}.}
@@ -16,7 +25,7 @@ gghighlight(..., n = NULL, max_highlight = 5L,
 
 \item{max_highlight}{Max number of series to highlight.}
 
-\item{unhighlighted_colour}{Colour for unhighlighted geoms.}
+\item{unhighlighted_params}{Aesthetics (e.g. colour, fill, and size) for unhighlighted geoms.}
 
 \item{use_group_by}{If \code{TRUE}, use \code{\link[dplyr:group_by]{dplyr::group_by()}} to evaluate \code{predicate}.}
 
@@ -25,25 +34,41 @@ gghighlight(..., n = NULL, max_highlight = 5L,
 \item{label_key}{Column name for \code{label} aesthetics.}
 
 \item{label_params}{A list of parameters, which is passed to \code{\link[ggrepel:geom_label_repel]{ggrepel::geom_label_repel()}}.}
+
+\item{keep_scales}{If \code{TRUE}, keep the original data with \code{\link[ggplot2:geom_blank]{ggplot2::geom_blank()}} so that the
+highlighted plot has the same scale with the data.}
+
+\item{calculate_per_facet}{(Experimental) If \code{TRUE}, include the facet variables to calculate the
+grouping; in other words, highlighting is done on each facet individually.}
+
+\item{unhighlighted_colour}{(Deprecated) Colour for unhighlighted geoms.}
 }
 \description{
+\Sexpr[results=rd, stage=render]{lifecycle::badge("maturing")}
+
 \code{gghiglight()} highlights (almost) any geoms according to the given predicates.
 }
 \examples{
 d <- data.frame(
-  idx = c( 1, 1, 1, 2, 2, 2, 3, 3, 3),
-  value = c( 1, 2, 3,10,11,12, 9,10,11),
-  category = rep(c("a","b","c"), 3),
+  idx = c(1, 1, 1, 2, 2, 2, 3, 3, 3),
+  value = c(1, 2, 3, 10, 11, 12, 9, 10, 11),
+  category = rep(c("a", "b", "c"), 3),
   stringsAsFactors = FALSE
 )
 
-# highlight the lines whose max values are larger than 10
+# Highlight the lines whose max values are larger than 10
 ggplot(d, aes(idx, value, colour = category)) +
   geom_line() + gghighlight(max(value) > 10)
 
-# highlight the points whose values are larger than 10
+# Highlight the points whose values are larger than 10
 ggplot(d, aes(idx, value)) +
   geom_point() +
   gghighlight(value > 10, label_key = category)
 
+# Specify the styles for unhighlighted layer
+ggplot(d, aes(idx, value, colour = category)) +
+  geom_line(size = 5) +
+  gghighlight(max(value) > 10,
+    unhighlighted_params = list(size = 1)
+  )
 }

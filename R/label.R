@@ -1,6 +1,6 @@
 # Labels
 
-generate_labelled_layer <- function(layers, group_infos, label_key, label_params) {
+generate_labelled_layer <- function(layers, group_infos, label_key, label_params, max_labels) {
   layer_for_label <- choose_layer_for_label(layers, group_infos, label_key)
   if (is.null(layer_for_label)) {
     return(NULL)
@@ -9,28 +9,28 @@ generate_labelled_layer <- function(layers, group_infos, label_key, label_params
   layer <- layer_for_label$layer
   label_key <- layer_for_label$label_key
 
-  switch (class(layer$geom)[1],
-    GeomLine = generate_label_for_line(layer, label_key, label_params),
-    GeomPoint = generate_label_for_point(layer, label_key, label_params),
+  switch(class(layer$geom)[1],
+    GeomLine = generate_label_for_line(layer, label_key, label_params, max_labels = max_labels),
+    GeomPoint = generate_label_for_point(layer, label_key, label_params, max_labels = max_labels),
     # TODO: To distinguish NULL, return list() to hide guides here.
     #       But, can we use more explicit representation?
     GeomBar = list(),
-    stop("Unsupported geom!", call. = FALSE)
+    abort("Unsupported geom!")
   )
 }
 
 choose_layer_for_label <- function(layers, group_infos, label_key) {
   show_label_key <- FALSE
-  if (rlang::quo_is_call(label_key)) {
+  if (quo_is_call(label_key)) {
     # if label_key is a call we can't check if the necessary variables exist in
     # the data. Just pray that the proper layer will be choosed... :pray:
     label_keys <- purrr::rerun(length(layers), label_key)
-  } else if (rlang::quo_is_symbol(label_key)) {
+  } else if (quo_is_symbol(label_key)) {
     # If label_key is a symbol, some layer must have the key in their data.
-    label_key_text <- rlang::quo_text(label_key)
+    label_key_text <- quo_text(label_key)
     layers <- purrr::keep(layers, ~ label_key_text %in% names(.$data))
     label_keys <- purrr::rerun(length(layers), label_key)
-  } else if (rlang::quo_is_null(label_key)) {
+  } else if (quo_is_null(label_key)) {
     # If label_key is not specified, some key might be usable for label.
     group_keys <- purrr::map(group_infos, "key")
     idx <- !purrr::map_lgl(group_keys, is.null)
@@ -40,7 +40,7 @@ choose_layer_for_label <- function(layers, group_infos, label_key) {
     # display which key was chosen for label
     show_label_key <- TRUE
   } else {
-    stop("Invalid label_key!", call. = FALSE)
+    abort("Invalid label_key!")
   }
 
   # If no layer has labellable variable, give up labelling
@@ -53,7 +53,7 @@ choose_layer_for_label <- function(layers, group_infos, label_key) {
     idx <- purrr::map_lgl(layers, fun)
     if (any(idx)) {
       label_key <- label_keys[idx][[1]]
-      if (show_label_key) message("label_key: ", rlang::quo_text(label_key))
+      if (show_label_key) message("label_key: ", quo_text(label_key))
       return(list(layer = layers[idx][[1]], label_key = label_key))
     }
   }
@@ -74,7 +74,7 @@ is_bar <- function(x) is_direct_class(x$geom, "GeomBar")
 
 is_direct_class <- function(x, class) identical(class(x)[1], class)
 
-generate_label_for_line <- function(layer, label_key, label_params) {
+generate_label_for_line <- function(layer, label_key, label_params, max_labels) {
   mapping <- layer$mapping
   mapping$label <- label_key
 
@@ -84,11 +84,15 @@ generate_label_for_line <- function(layer, label_key, label_params) {
   # To restore the original group, extract group keys (I don't know this is really necessary, though...)
   group_key_orig <- dplyr::groups(layer$data)
 
-  rightmost_points <- layer$data %>%
-    dplyr::group_by(!!group_key) %>%
-    dplyr::filter(!!x_key == max(!!x_key)) %>%
-    # max value can appear multiple times, so ensure only one row per group
-    dplyr::slice(1)
+  data <- dplyr::group_by(layer$data, !!group_key)
+  if (dplyr::n_groups(data) > max_labels) {
+    inform("Too many data series, skip labeling")
+    return(list())
+  }
+  
+  rightmost_points <- dplyr::filter(data, !!x_key == max(!!x_key))
+  # max value can appear multiple times, so ensure only one row per group
+  rightmost_points <- dplyr::slice(rightmost_points, 1)
 
   # restore the original group
   rightmost_points <- dplyr::group_by(rightmost_points, !!!group_key_orig)
@@ -96,23 +100,29 @@ generate_label_for_line <- function(layer, label_key, label_params) {
   call_ggrepel_with_params(mapping, rightmost_points, label_params)
 }
 
-generate_label_for_point <- function(layer, label_key, label_params) {
+generate_label_for_point <- function(layer, label_key, label_params, max_labels) {
+  if (nrow(layer$data) > max_labels) {
+    inform("Too many data points, skip labeling")
+    return(list())
+  }
+  
   mapping <- layer$mapping
   mapping$label <- label_key
 
   if (inherits(layer$position, "PositionJitter") && is.null(layer$position$seed)) {
     # FIXME when this is fixed on upstream: https://github.com/tidyverse/ggplot2/issues/2507
-    layer$position$seed <- sample.int(.Machine$integer.max, 1L)
+    position <- clone_position(layer$position)
+    position$seed <- sample.int(.Machine$integer.max, 1L)
+    layer$position <- position
   }
 
-  position <- clone_position(layer$position)
-  label_params$position <- position
+  label_params$position <- layer$position
 
   call_ggrepel_with_params(mapping, layer$data, label_params)
 }
 
 
 call_ggrepel_with_params <- function(mapping, data, params) {
-  ggrepel_quo <- rlang::quo(ggrepel::geom_label_repel(mapping, data, !!!params))
-  rlang::eval_tidy(ggrepel_quo)
+  ggrepel_quo <- quo(ggrepel::geom_label_repel(mapping, data, !!!params))
+  eval_tidy(ggrepel_quo)
 }

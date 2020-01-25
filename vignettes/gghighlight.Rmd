@@ -65,7 +65,7 @@ Here comes gghighlight package, `dplyr::filter()` equivalent for ggplot2.
 
 (If you are interested in the more details behind the idea of highlighting, please read this post: [Anatomy of gghighlight](https://yutani.rbind.io/post/2018-06-03-anatomy-of-gghighlight/).)
 
-## `gghighlight()`
+## gghighlight()
 
 The main function of gghighlight package is `gghighlight()`.
 For example, by using this function, we can highlight the lines whose max values are larger than 20 like below:
@@ -108,6 +108,9 @@ ggplot(d) +
   facet_wrap(~ type)
 ```
 
+There are also some options to control the way of highlighting. See "Options" section below.
+
+
 ## Geoms
 
 `gghighlight()` can highlight almost every geoms. Here are some examples.
@@ -126,7 +129,7 @@ p
 
 Are you wondering if this is really highlighted? Yes, it is.
 But, the unhighlighted bars are all overwritten by the highlighted bars.
-This seems not so useful, until you see the fecetted version:
+This seems not so useful, until you see the facetted version:
 
 ```{r bar-wrap}
 p + facet_wrap(~ Species)
@@ -209,4 +212,56 @@ p$data
 
 p + geom_label(aes(label = type),
                hjust = 1, vjust = 1, fill = "purple", colour = "white", alpha= 0.5)
+```
+
+## Options
+
+### `unhighlighted_params`
+
+If you want to change the style of unhighlighted layers, use `unhighlighted_params`.
+
+```{r gghighlight-params}
+ggplot(d) +
+  geom_line(aes(idx, value, colour = type), size = 5) +
+  gghighlight(max(value) > 19,
+              unhighlighted_params = list(size = 1, colour = alpha("pink", 0.4)))
+```
+
+### `keep_scales`
+
+If you want to keep the original scales, set `keep_scales` to `TRUE`.
+
+```{r keep_scales, fig.show='hold'}
+p <- ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
+  geom_point()
+
+p + gghighlight(cyl == 6)
+
+p + gghighlight(cyl == 6, keep_scales = TRUE) + ggtitle("keep_scale = TRUE")
+```
+
+### `calculate_per_facet`
+
+If you want to highlight each facet individually, set `calculate_per_facet` to `TRUE`.
+Note that `gghighlight()` affects the plot *before* `gghighlight()`. If you add `facet_*()` after adding `gghighlight()`, this option doesn't work.
+
+```{r calculate_per_facet, fig.show='hold'}
+d <- data.frame(
+  idx =   c(1, 2, 3, 4, 1, 2, 3, 4),
+  value = c(10, 11, 12, 13, 4, 8, 16, 32),
+  cat1 =  rep(c("a", "b"), each = 4),
+  cat2 =  rep(rep(c("1-2", "3-4"), each = 2), 2),
+  stringsAsFactors = FALSE
+)
+
+p <- ggplot(d, aes(idx, value, colour = cat1)) +
+  geom_line() +
+  facet_wrap(vars(cat2))
+
+p +
+  gghighlight(max(value) > 10)
+
+p +
+  gghighlight(max(value) > 10, calculate_per_facet = TRUE) +
+  ggtitle("calculate_per_facet = TRUE")
 ```

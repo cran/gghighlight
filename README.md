@@ -1,12 +1,18 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-gghighlight
-===========
+
+# gghighlight
+
+<!-- badges: start -->
+
+[![Travis-CI Build
+Status](https://api.travis-ci.com/yutannihilation/gghighlight.svg?branch=master)](https://travis-ci.com/yutannihilation/gghighlight)
+[![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/gghighlight)](https://cran.r-project.org/package=gghighlight)
+<!-- badges: end -->
 
 Highlight geoms in ggplot2.
 
-Installation
-------------
+## Installation
 
 ``` r
 install.packages("gghighlight")
@@ -16,10 +22,10 @@ install.packages("gghighlight")
 devtools::install_github("yutannihilation/gghighlight")
 ```
 
-Example
--------
+## Example
 
-Suppose we have a data that has so many series that it is hard to identify them by their colours as the differences are so subtle.
+Suppose we have a data that has so many series that it is hard to
+identify them by their colours as the differences are so subtle.
 
 ``` r
 library(ggplot2)
@@ -28,9 +34,10 @@ ggplot(d) +
   geom_line(aes(idx, value, colour = type))
 ```
 
-![](man/figures/README-ggplot2-simple-1.png)
+![](man/figures/README-ggplot2-simple-1.png)<!-- -->
 
-With `gghighlight()`, we can highlight the lines whose max values are larger than 20:
+With `gghighlight()`, we can highlight the lines whose max values are
+larger than 20:
 
 ``` r
 library(gghighlight)
@@ -43,21 +50,24 @@ p <- ggplot(d) +
 p
 ```
 
-![](man/figures/README-gghighlight-simple-1.png)
+![](man/figures/README-gghighlight-simple-1.png)<!-- -->
 
-The result is an usual ggplot object, so it is fully customizable. For example, it can be used with custom themes and facets.
+The result is an usual ggplot object, so it is fully customizable. For
+example, it can be used with custom themes and facets.
 
 ``` r
 p + theme_minimal()
 ```
 
-![](man/figures/README-gghighlight-theme-facets-1.png)
+![](man/figures/README-gghighlight-theme-facets-1.png)<!-- -->
 
 ``` r
 
 p + theme_minimal() + facet_wrap(~ type)
 ```
 
-![](man/figures/README-gghighlight-theme-facets-2.png)
+![](man/figures/README-gghighlight-theme-facets-2.png)<!-- -->
 
-`gghighlight()` can highlight almost any geoms. For more details, please read [Introduction to gghighlight](https://yutannihilation.github.io/gghighlight/articles/gghighlight.html).
+`gghighlight()` can highlight almost any geoms. For more details, please
+read [Introduction to
+gghighlight](https://yutannihilation.github.io/gghighlight/articles/gghighlight.html).

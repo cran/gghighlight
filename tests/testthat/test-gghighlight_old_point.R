@@ -1,4 +1,5 @@
-context("gghighlight_point")
+setup(options(lifecycle_verbosity = "quiet"))
+teardown(options(lifecycle_verbosity = NULL))
 
 d <- data.frame(
   x     = c( 1, 1, 1, 2, 2, 2, 3, 3, 3),
@@ -9,7 +10,7 @@ d <- data.frame(
 )
 
 test_that("gghighlight_point() works", {
-  expect_silent(p <- gghighlight_point(d, aes(x, y), value > 5, label_key = category))
+  p <- gghighlight_point(d, aes(x, y), value > 5, label_key = category)
   d_built <- ggplot2::ggplot_build(p)
 
   expect_equal(length(d_built$data), 3L)
@@ -35,13 +36,13 @@ test_that("gghighlight_point() without label_key works", {
   expect_warning(p <- gghighlight_point(d, aes(x, y), value > 5))
   d_built <- ggplot2::ggplot_build(p)
 
-  expect_equal(d_built$plot$layers[[3]]$mapping$label, rlang::quo(category))
+  expect_equal(d_built$plot$layers[[3]]$mapping$label, quo(category))
 
   expect_equal(length(d_built$data), 3L)
 })
 
 test_that("gghighligt_point() works with numerical predicate", {
-  expect_silent(p <- gghighlight_point(d, aes(x, y), value, max_highlight = 3L, label_key = category))
+  p <- gghighlight_point(d, aes(x, y), value, max_highlight = 3L, label_key = category)
   d_built <- ggplot2::ggplot_build(p)
 
   expect_equal(length(d_built$data), 3L)
