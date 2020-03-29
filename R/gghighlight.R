@@ -296,10 +296,11 @@ calculate_group_info <- function(data, mapping, extra_vars = NULL) {
   }
 
   # calculate group IDs with extra_data
-  group_ids <- dplyr::group_indices(
+  group_df <- dplyr::group_by(
     dplyr::bind_cols(data_evaluated, extra_data),
     !!!syms(c(group_cols, names(extra_data)))
   )
+  group_ids <- dplyr::group_indices(group_df)
 
   list(
     data = data_evaluated,
@@ -361,8 +362,9 @@ bleach_layer <- function(layer, group_info, unhighlighted_params, calculate_per_
 }
 
 default_unhighlighted_params <- list(
-  colour = scales::alpha("grey", 0.7),
-  fill = scales::alpha("grey", 0.7)
+  # scales::alpha("grey", 0.7)
+  colour = "#BEBEBEB2",
+  fill = "#BEBEBEB2"
 )
 
 get_default_aes_param <- function(aes_param_name, geom, mapping) {
@@ -478,6 +480,11 @@ calculate_grouped <- function(data, predicates, max_highlight, group_ids) {
 
   data_predicated <- dplyr::group_by(data_predicated, !!VERY_SECRET_COLUMN_NAME := !!group_ids)
   data_predicated <- dplyr::summarise(data_predicated, !!!predicates)
+
+  group_with_multiple_result <- anyDuplicated(dplyr::pull(data_predicated, !!VERY_SECRET_COLUMN_NAME))
+  if (!identical(group_with_multiple_result, 0L)) {
+    abort("", "gghighlight_invalid_group_predicate_error")
+  }
 
   cols <- choose_col_for_filter_and_arrange(data_predicated, VERY_SECRET_COLUMN_NAME)
 

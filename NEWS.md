@@ -1,3 +1,9 @@
+# gghighlight 0.3.0
+
+## Breaking changes
+
+* `gghighlight_point()` and `gghighlight_line()`, deprecated in gghighlight 0.1.0, are now defunct (#132).
+
 # gghighlight 0.2.0
 
 ## New features
