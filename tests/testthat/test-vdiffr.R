@@ -1,7 +1,10 @@
 # FIXME: remove this when https://github.com/r-lib/vdiffr/issues/71 is fixed
+local_edition(2)
 context("vdiffr")
 
 test_that("gghighlight() highlights correctly", {
+  testthat::skip_if_not_installed("vdiffr")
+
   vdiffr::expect_doppelganger(
     "simple bar chart",
     ggplot(mpg, aes(class, fill = factor(cyl))) +

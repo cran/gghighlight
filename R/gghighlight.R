@@ -266,7 +266,7 @@ calculate_group_info <- function(data, mapping, extra_vars = NULL) {
   # detected by checking if all elements are NA or not.
   mapping_wrapped <- purrr::map(mapping, ~ quo(tryCatch(!!., error = function(e) NA)))
   data_evaluated <- dplyr::transmute(data, !!!mapping_wrapped)
-  data_evaluated <- dplyr::select_if(data_evaluated, ~ !all(is.na(.)))
+  data_evaluated <- dplyr::select(data_evaluated, where(~ !all(is.na(.))))
 
   # Calculate group IDs as ggplot2 does.
   # (c.f. https://github.com/tidyverse/ggplot2/blob/8778b48b37d8b7e41c0f4f213031fb47810e70aa/R/grouping.r#L11-L28)
@@ -298,7 +298,7 @@ calculate_group_info <- function(data, mapping, extra_vars = NULL) {
   # calculate group IDs with extra_data
   group_df <- dplyr::group_by(
     dplyr::bind_cols(data_evaluated, extra_data),
-    !!!syms(c(group_cols, names(extra_data)))
+    across(all_of(c(group_cols, names(extra_data))))
   )
   group_ids <- dplyr::group_indices(group_df)
 
@@ -443,8 +443,7 @@ sieve_layer <- function(layer, group_info, predicates,
   error = function(e) {
     # do not warn here, but in ggplot_add.gg_highlighter()
     return(FALSE)
-  }
-  )
+  })
 
   FALSE
 }
@@ -489,11 +488,11 @@ calculate_grouped <- function(data, predicates, max_highlight, group_ids) {
   cols <- choose_col_for_filter_and_arrange(data_predicated, VERY_SECRET_COLUMN_NAME)
 
   # Filter by the logical predicates.
-  data_filtered <- dplyr::filter(data_predicated, !!!cols$filter)
+  data_filtered <- dplyr::filter(data_predicated, across(all_of(cols$filter)))
 
   # Arrange by the other predicates and slice rows down to max_highlights.
   if (length(cols$arrange) > 0) {
-    data_filtered <- dplyr::arrange(data_filtered, !!!cols$arrange)
+    data_filtered <- dplyr::arrange(data_filtered, across(all_of(cols$arrange)))
     data_filtered <- utils::tail(data_filtered, max_highlight)
   }
 
@@ -506,17 +505,17 @@ calculate_ungrouped <- function(data, predicates, max_highlight) {
   data_predicated <- data
 
   data_predicated <- tibble::rowid_to_column(data_predicated, var = expr_text(VERY_SECRET_COLUMN_NAME))
-  data_predicated <- dplyr::transmute(data_predicated, !!! predicates, !!VERY_SECRET_COLUMN_NAME)
+  data_predicated <- dplyr::transmute(data_predicated, !!!predicates, !!VERY_SECRET_COLUMN_NAME)
 
   cols <- choose_col_for_filter_and_arrange(data_predicated, VERY_SECRET_COLUMN_NAME)
 
   # Filter by the logical predicates.
-  data_filtered <- dplyr::filter(data_predicated, !!!cols$filter)
+  data_filtered <- dplyr::filter(data_predicated, across(all_of(cols$filter)))
 
   # Arrange by the other predicates and slice rows down to max_highlights.
   if (length(cols$arrange) > 0) {
-    data_filtered <- dplyr::filter_at(data_filtered, dplyr::vars(!!!cols$arrange), ~ !is.na(.))
-    data_filtered <- dplyr::arrange(data_filtered, !!!cols$arrange)
+    data_filtered <- dplyr::filter(data_filtered, across(cols$arrange, ~ !is.na(.)))
+    data_filtered <- dplyr::arrange(data_filtered, across(all_of(cols$arrange)))
     data_filtered <- utils::tail(data_filtered, max_highlight)
   }
 
@@ -533,9 +532,9 @@ choose_col_for_filter_and_arrange <- function(data, exclude_col) {
   col_idx_lst <- purrr::map_lgl(data, is.list)
   list(
     # Use logical columns for filter()
-    filter = syms(names(data)[col_idx_lgl]),
+    filter = names(data)[col_idx_lgl],
     # Use other columns but lists for arrange() (arrange doesn't support list columns)
-    arrange = syms(names(data)[!col_idx_lgl & !col_idx_lst])
+    arrange = names(data)[!col_idx_lgl & !col_idx_lst]
   )
 }
 
