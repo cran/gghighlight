@@ -14,7 +14,8 @@
 #' @param max_highlight
 #'   Max number of series to highlight.
 #' @param unhighlighted_params
-#'   Aesthetics (e.g. colour, fill, and size) for unhighlighted geoms.
+#'   Aesthetics (e.g. colour, fill, and size) for unhighlighted geoms. Specifying
+#'   `colour = NULL` or `fill = NULL` will preserve the original colour.
 #' @param use_group_by
 #'   If `TRUE`, use [dplyr::group_by()] to evaluate `predicate`.
 #' @param use_direct_label
@@ -265,7 +266,7 @@ calculate_group_info <- function(data, mapping, extra_vars = NULL) {
   # So, wrap it with tryCatch() and remove the failed results, which can be
   # detected by checking if all elements are NA or not.
   mapping_wrapped <- purrr::map(mapping, ~ quo(tryCatch(!!., error = function(e) NA)))
-  data_evaluated <- dplyr::transmute(data, !!!mapping_wrapped)
+  data_evaluated <- dplyr::transmute(data, quasi_parallel(!!!mapping_wrapped, ..nrow = n()))
   data_evaluated <- dplyr::select(data_evaluated, where(~ !all(is.na(.))))
 
   # Calculate group IDs as ggplot2 does.
@@ -281,11 +282,11 @@ calculate_group_info <- function(data, mapping, extra_vars = NULL) {
   group_keys <- purrr::keep(mapping[group_cols], quo_is_symbol)
 
   # if extra variables (e.g. facet specs) are specified, use them.
-  if (!is.null(extra_vars)) {
+  if (!is.null(extra_vars) && !is_empty(extra_vars)) {
     if (!is_quosures(extra_vars) || !all(have_name(extra_vars))) {
       abort("extra_vars must be a named quosures object.")
     }
-    extra_data <- dplyr::transmute(data, !!!extra_vars)
+    extra_data <- dplyr::transmute(data, quasi_parallel(!!!extra_vars, ..nrow = n()))
   } else {
     extra_data <- NULL
   }
@@ -314,8 +315,20 @@ bleach_layer <- function(layer, group_info, unhighlighted_params, calculate_per_
   # it is not included in unhighlighted_params. But, if the default_aes is NA,
   # respect it (e.g. geom_bar()'s default colour is NA).
   # Note that this depends on the mapping, so this needs to be done before modifying the mapping.
-  unhighlighted_params$colour <- unhighlighted_params$colour %||% get_default_aes_param("colour", layer$geom, layer$mapping)
-  unhighlighted_params$fill <- unhighlighted_params$fill %||% get_default_aes_param("fill", layer$geom, layer$mapping)
+  for (nm in c("colour", "fill")) {
+    if (is.null(unhighlighted_params[[nm]])) {
+      # if the aesthetic name is explicit NULL, then do nothing
+      if (has_name(unhighlighted_params, nm)) {
+        next
+      }
+      # if the aesthetic name is not specified, fill it with the default
+      unhighlighted_params[[nm]] <- get_default_aes_param(nm, layer$geom, layer$mapping)
+    }
+
+    # FIXME: Is this necessary while aes_params will override these mappings?
+    # remove colour and fill from mapping
+    layer$mapping[nm] <- list(NULL)
+  }
 
   # c.f. https://github.com/tidyverse/ggplot2/blob/e9d4e5dd599b9f058cbe9230a6517f85f3587567/R/layer.r#L107-L108
   aes_params_bleached <- unhighlighted_params[names(unhighlighted_params) %in% layer$geom$aesthetics()]
@@ -323,10 +336,6 @@ bleach_layer <- function(layer, group_info, unhighlighted_params, calculate_per_
 
   layer$aes_params <- utils::modifyList(layer$aes_params, aes_params_bleached)
   layer$geom_params <- utils::modifyList(layer$geom_params, geom_params_bleached)
-
-  # FIXME: Is this necessary while aes_params will override these mappings?
-  # remove colour and fill from mapping
-  layer$mapping[c("colour", "fill")] <- list(NULL)
 
   # FIXME: can this be removed?
   if (is.null(group_info$key)) {
@@ -478,7 +487,7 @@ calculate_grouped <- function(data, predicates, max_highlight, group_ids) {
   data_predicated <- data
 
   data_predicated <- dplyr::group_by(data_predicated, !!VERY_SECRET_COLUMN_NAME := !!group_ids)
-  data_predicated <- dplyr::summarise(data_predicated, !!!predicates)
+  data_predicated <- dplyr::summarise(data_predicated, quasi_parallel(!!!predicates, ..nrow = 1L))
 
   group_with_multiple_result <- anyDuplicated(dplyr::pull(data_predicated, !!VERY_SECRET_COLUMN_NAME))
   if (!identical(group_with_multiple_result, 0L)) {
@@ -505,7 +514,11 @@ calculate_ungrouped <- function(data, predicates, max_highlight) {
   data_predicated <- data
 
   data_predicated <- tibble::rowid_to_column(data_predicated, var = expr_text(VERY_SECRET_COLUMN_NAME))
-  data_predicated <- dplyr::transmute(data_predicated, !!!predicates, !!VERY_SECRET_COLUMN_NAME)
+  data_predicated <- dplyr::transmute(
+    data_predicated,
+    quasi_parallel(!!!predicates, ..nrow = n()),
+    !!VERY_SECRET_COLUMN_NAME
+  )
 
   cols <- choose_col_for_filter_and_arrange(data_predicated, VERY_SECRET_COLUMN_NAME)
 

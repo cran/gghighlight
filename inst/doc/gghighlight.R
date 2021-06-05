@@ -72,7 +72,7 @@ p + facet_wrap(~ Species)
 
 ## ----point--------------------------------------------------------------------
 set.seed(10)
-d2 <- dplyr::sample_n(d, 20)
+d2 <- dplyr::slice_sample(d, n = 20)
 
 ggplot(d2, aes(idx, value)) +
   geom_point() +
@@ -112,6 +112,13 @@ ggplot(d) +
   geom_line(aes(idx, value, colour = type), size = 5) +
   gghighlight(max(value) > 19,
               unhighlighted_params = list(size = 1, colour = alpha("pink", 0.4)))
+
+## ----gghighlight-params-null--------------------------------------------------
+ggplot(d) +
+  geom_line(aes(idx, value, colour = type)) +
+  gghighlight(max(value) > 19,
+              # preserve colour and modify alpha instead
+              unhighlighted_params = list(colour = NULL, alpha = 0.3))
 
 ## ----keep_scales, fig.show='hold'---------------------------------------------
 p <- ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +

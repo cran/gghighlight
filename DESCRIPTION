@@ -1,7 +1,7 @@
 Type: Package
 Package: gghighlight
 Title: Highlight Lines and Points in 'ggplot2'
-Version: 0.3.1
+Version: 0.3.2
 Authors@R: 
     person(given = "Hiroaki",
            family = "Yutani",
@@ -18,12 +18,11 @@ Suggests: knitr, rmarkdown, sf, testthat, vdiffr (>= 0.3.0)
 VignetteBuilder: knitr
 RdMacros: lifecycle
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.1.1
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2020-12-12 03:18:34 UTC; yutani
+Packaged: 2021-06-05 14:26:57 UTC; yutani
 Author: Hiroaki Yutani [aut, cre] (<https://orcid.org/0000-0002-3385-7233>)
 Maintainer: Hiroaki Yutani <yutani.ini@gmail.com>
 Repository: CRAN
-Date/Publication: 2020-12-12 06:10:02 UTC
+Date/Publication: 2021-06-05 14:40:02 UTC

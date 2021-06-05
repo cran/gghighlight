@@ -1,9 +1,16 @@
-# gghighlight 0.3.1
-
-* `gghighlight()` now can add labels on discrete scales (#160).
+# gghighlight 0.3.2
 
 * `gghighlight()` now accepts `n()` so that you can highlight based on the
   number of rows within each group (#154).
+* `gghighlight()` now preserves `colour` or `fill` when explicit `NULL` is
+  specified on `unhighlighted_params` (i.e. `unhighlighted_params = list(colour = NULL)`)
+  (#152).
+* Fix a longstanding bug of wrong calculation when the data has the same name of
+  columns as aesthetics, e.g. `x` (#168).
+
+# gghighlight 0.3.1
+
+* `gghighlight()` now can add labels on discrete scales (#160).
 
 # gghighlight 0.3.0
 
