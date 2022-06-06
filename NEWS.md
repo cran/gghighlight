@@ -1,3 +1,7 @@
+# gghighlight 0.3.3
+
+* Fix the deprecated use of `dplyr::across()` in `dplyr::filter()` (#177).
+
 # gghighlight 0.3.2
 
 * `gghighlight()` now accepts `n()` so that you can highlight based on the

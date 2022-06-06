@@ -45,7 +45,7 @@ ggplot(d) +
 ## ----gghighlight-two-conds----------------------------------------------------
 ggplot(d) +
   geom_line(aes(idx, value, colour = type)) +
-  gghighlight(max(value) > 15, mean(flag) > 0.55)
+  gghighlight(max(value) > 15, mean(flag) > 0.5)
 
 ## ----gghighlight-theme--------------------------------------------------------
 ggplot(d) +
