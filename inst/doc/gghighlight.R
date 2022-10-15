@@ -94,7 +94,7 @@ ggplot(d) +
 ## ----labels2------------------------------------------------------------------
 ggplot(d) +
   geom_line(aes(idx, value, colour = type)) +
-  gghighlight(max(value) > 20, label_params = list(size = 10))
+  gghighlight(max(value) > 20, label_params = list(linewidth = 10))
 
 ## ----labels3------------------------------------------------------------------
 p <- ggplot(d2, aes(idx, value)) +
@@ -109,9 +109,9 @@ p + geom_label(aes(label = type),
 
 ## ----gghighlight-params-------------------------------------------------------
 ggplot(d) +
-  geom_line(aes(idx, value, colour = type), size = 5) +
+  geom_line(aes(idx, value, colour = type), linewidth = 5) +
   gghighlight(max(value) > 19,
-              unhighlighted_params = list(size = 1, colour = alpha("pink", 0.4)))
+              unhighlighted_params = list(linewidth = 1, colour = alpha("pink", 0.4)))
 
 ## ----gghighlight-params-null--------------------------------------------------
 ggplot(d) +
@@ -147,4 +147,23 @@ p +
 p +
   gghighlight(max(value) > 10, calculate_per_facet = TRUE) +
   ggtitle("calculate_per_facet = TRUE")
+
+## ----line_label_type, fig.show='hold'-----------------------------------------
+d <- data.frame(
+  x = rep(1:3, times = 3),
+  y = c(1:3, 2, 4, 2, 0, 1, 1),
+  id = rep(c("a", "b", "c"), each = 3)
+)
+
+p <- ggplot(d) +
+  geom_line(aes(x, y, colour = id))
+
+p +
+  gghighlight(max(y) >= 3, line_label_type = "label_path", label_params = list(size = 10)) +
+  ggtitle('line_label_type = "label_path"')
+
+p +
+  gghighlight(max(y) >= 3, line_label_type = "sec_axis") +
+  ggtitle('line_label_type = "sec_axis"') +
+  theme(axis.text.y.right = element_text(size = 20))
 
