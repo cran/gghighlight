@@ -1,3 +1,7 @@
+# gghighlight 0.4.1
+
+* This is a maintenance release to update test expectations for the upcoming version of ggplot2.
+
 # gghighlight 0.4.0
 
 * Fix compatibility with purrr 1.0.0 and ggplot2 3.4.0.
